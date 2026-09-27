@@ -5,6 +5,8 @@
   --card-bg: #fff;
   --card-red: #c62828;
   --card-black: #1a1a1a;
+  --card-blue: #1565c0;
+  --card-green: #2e7d32;
   --range-empty: #e9ecef;
   --range-dead: #f8f9fa;
 }
@@ -158,6 +160,14 @@ body {
 
 .playing-card.red {
   color: var(--card-red);
+}
+
+.four-color .playing-card.suit-d {
+  color: var(--card-blue);
+}
+
+.four-color .playing-card.suit-c {
+  color: var(--card-green);
 }
 
 .playing-card.dim {

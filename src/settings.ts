@@ -6,6 +6,8 @@ export interface Settings {
   oddsVsRandom: boolean;
   showOuts: boolean;
   showRange: boolean;
+  /** Color each suit differently (clubs green, diamonds blue) instead of red/black. */
+  fourColorDeck: boolean;
   /** Review mode: show the opponent's hole cards and compute against them. */
   revealOpponent: boolean;
   botDelayMs: number;
@@ -18,6 +20,7 @@ export const DEFAULT_SETTINGS: Settings = {
   oddsVsRandom: true,
   showOuts: true,
   showRange: true,
+  fourColorDeck: false,
   revealOpponent: false,
   botDelayMs: 800,
 };

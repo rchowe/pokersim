@@ -1,4 +1,4 @@
-import { type Card, RANKS, SUIT_SYMBOLS, isRed, rankOf, suitOf } from '../poker/cards.ts';
+import { type Card, RANKS, SUITS, SUIT_SYMBOLS, isRed, rankOf, suitOf } from '../poker/cards.ts';
 
 interface Props {
   card?: Card;
@@ -14,7 +14,7 @@ export function PlayingCard({ card, hidden, size = 'md', dim }: Props) {
   const rank = RANKS[rankOf(card)].replace('T', '10');
   const suit = SUIT_SYMBOLS[suitOf(card)];
   return (
-    <div className={`playing-card ${size} ${isRed(card) ? 'red' : ''} ${dim ? 'dim' : ''}`} aria-label={rank + suit}>
+    <div className={`playing-card ${size} suit-${SUITS[suitOf(card)]} ${isRed(card) ? 'red' : ''} ${dim ? 'dim' : ''}`} aria-label={rank + suit}>
       <span className="rank">{rank}</span>
       <span className="suit">{suit}</span>
     </div>

@@ -56,6 +56,7 @@ export function SettingsPanel({ settings, onChange, onResetSession }: Props) {
         {toggle('oddsVsRandom', 'Equity vs. random hand', true, !settings.showOdds)}
         {toggle('showOuts', 'Show outs')}
         {toggle('showRange', 'Show ranges')}
+        {toggle('fourColorDeck', 'Four-color deck')}
         {toggle('revealOpponent', 'Reveal opponent’s cards (review mode)', false, settings.mode === 'both')}
         {settings.mode === 'bot' && (
           <div className="d-flex align-items-center gap-2 mt-2 small">

@@ -96,7 +96,7 @@ export default function App() {
           </span>
         </div>
       </nav>
-      <main className="container-fluid py-3">
+      <main className={`container-fluid py-3 ${settings.fourColorDeck ? 'four-color' : ''}`}>
         <div className="row g-3">
           <div className="col-lg-7 d-flex flex-column gap-3">
             <Table state={state} visible={[true, oppRevealed]} labels={labels} />
