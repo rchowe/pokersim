@@ -1,10 +1,10 @@
-# Heads-Up Hold'em Trainer
+# Hold'em Trainer
 
-A React + Bootstrap app for learning heads-up no-limit Texas hold'em.
+A React + Bootstrap app for learning no-limit Texas hold'em, heads-up or at a table of 3–6.
 
-- Play full hands (100bb, blinds 5/10) against a rule-based bot, or control both seats.
+- Play full hands (100bb, blinds 5/10) against rule-based bots, or control every seat. Pick 2 (heads-up) to 6 players in Settings.
 - Optional study panels: equity vs. an estimated range / random hand / actual cards (review mode),
-  pot odds, outs with rule-of-2/4, the opponent's estimated range, and preflop charts.
+  pot odds, outs with rule-of-2/4, each opponent's estimated range, and position-aware preflop charts.
 
 ```bash
 npm install

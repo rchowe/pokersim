@@ -9,8 +9,9 @@ import { type WeightedCombo, fullRange } from '../poker/range.ts';
 interface Props {
   hero: Card[];
   board: Card[];
-  opponentRange: WeightedCombo[];
-  opponentCards: Card[] | null;
+  /** One estimated range per opponent still in the hand. */
+  opponentRanges: WeightedCombo[][];
+  opponentCards: Card[][] | null;
   vsRange: boolean;
   vsRandom: boolean;
   /** Set when the hero faces a bet. */
@@ -19,33 +20,38 @@ interface Props {
 
 const pct = (x: number, digits = 1) => `${(x * 100).toFixed(digits)}%`;
 
-export function OddsPanel({ hero, board, opponentRange, opponentCards, vsRange, vsRandom, potOdds }: Props) {
+export function OddsPanel({ hero, board, opponentRanges, opponentCards, vsRange, vsRandom, potOdds }: Props) {
   const rows = useMemo(() => {
     const out: { label: string; hint: string; result: EquityResult | null }[] = [];
+    const multi = opponentRanges.length > 1;
     if (vsRange) {
       out.push({
-        label: 'vs. estimated range',
+        label: multi ? 'vs. estimated ranges' : 'vs. estimated range',
         hint: 'Weighted by what their actions suggest they hold.',
-        result: calcEquity(hero, board, opponentRange),
+        result: calcEquity(hero, board, opponentRanges),
       });
     }
     if (vsRandom) {
+      const random = fullRange([...hero, ...board]);
       out.push({
-        label: 'vs. random hand',
+        label: multi ? `vs. ${opponentRanges.length} random hands` : 'vs. random hand',
         hint: 'Any two cards, equally likely.',
-        result: calcEquity(hero, board, fullRange([...hero, ...board])),
+        result: calcEquity(hero, board, opponentRanges.map(() => random)),
       });
     }
     if (opponentCards) {
-      const [c1, c2] = opponentCards;
       out.push({
         label: 'vs. their actual cards',
         hint: 'Review mode: uses the real hole cards.',
-        result: calcEquity(hero, board, [{ c1, c2, cls: classOfCombo(c1, c2), w: 1 }]),
+        result: calcEquity(
+          hero,
+          board,
+          opponentCards.map(([c1, c2]) => [{ c1, c2, cls: classOfCombo(c1, c2), w: 1 }]),
+        ),
       });
     }
     return out;
-  }, [hero, board, opponentRange, opponentCards, vsRange, vsRandom]);
+  }, [hero, board, opponentRanges, opponentCards, vsRange, vsRandom]);
 
   const needed = potOdds ? potOdds.toCall / (potOdds.pot + potOdds.toCall) : null;
   const distribution = board.length < 5 ? rows.find((r) => r.result)?.result?.categories : undefined;
@@ -103,6 +109,13 @@ export function OddsPanel({ hero, board, opponentRange, opponentCards, vsRange, 
             )}
           </div>
         ))}
+
+        {opponentRanges.length > 1 && rows.length > 0 && (
+          <p className="small text-body-secondary">
+            Against {opponentRanges.length} opponents you need to beat all of them, so equity runs lower than heads-up.
+            A tie for the best hand counts as a share of the pot.
+          </p>
+        )}
 
         {potOdds && needed !== null && (
           <div className="alert alert-info py-2 small">

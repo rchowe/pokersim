@@ -1,3 +1,5 @@
+import { Fragment } from 'react';
+import { MAX_PLAYERS, MIN_PLAYERS } from '../poker/game.ts';
 import type { Settings } from '../settings.ts';
 
 interface Props {
@@ -29,6 +31,25 @@ export function SettingsPanel({ settings, onChange, onResetSession }: Props) {
     <div className="card shadow-sm">
       <div className="card-header fw-semibold">Settings</div>
       <div className="card-body">
+        <div className="d-flex align-items-center gap-2 mb-2 small">
+          <span className="text-nowrap">Players</span>
+          <div className="btn-group btn-group-sm w-100" role="group" aria-label="Number of players">
+            {Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => MIN_PLAYERS + i).map((n) => (
+              <Fragment key={n}>
+                <input
+                  type="radio"
+                  className="btn-check"
+                  id={`players-${n}`}
+                  checked={settings.numPlayers === n}
+                  onChange={() => set('numPlayers', n)}
+                />
+                <label className="btn btn-outline-primary" htmlFor={`players-${n}`} title={n === 2 ? 'Heads-up' : undefined}>
+                  {n === 2 ? 'HU' : n}
+                </label>
+              </Fragment>
+            ))}
+          </div>
+        </div>
         <div className="btn-group w-100 mb-3" role="group" aria-label="Opponent mode">
           <input
             type="radio"
@@ -38,7 +59,7 @@ export function SettingsPanel({ settings, onChange, onResetSession }: Props) {
             onChange={() => set('mode', 'bot')}
           />
           <label className="btn btn-outline-primary" htmlFor="mode-bot">
-            Play vs. bot
+            Play vs. {settings.numPlayers === 2 ? 'bot' : 'bots'}
           </label>
           <input
             type="radio"
@@ -48,7 +69,7 @@ export function SettingsPanel({ settings, onChange, onResetSession }: Props) {
             onChange={() => set('mode', 'both')}
           />
           <label className="btn btn-outline-primary" htmlFor="mode-both">
-            Control both seats
+            Control {settings.numPlayers === 2 ? 'both seats' : 'all seats'}
           </label>
         </div>
         {toggle('showOdds', 'Show odds')}
@@ -57,7 +78,12 @@ export function SettingsPanel({ settings, onChange, onResetSession }: Props) {
         {toggle('showOuts', 'Show outs')}
         {toggle('showRange', 'Show ranges')}
         {toggle('fourColorDeck', 'Four-color deck')}
-        {toggle('revealOpponent', 'Reveal opponent’s cards (review mode)', false, settings.mode === 'both')}
+        {toggle(
+          'revealOpponent',
+          settings.numPlayers === 2 ? 'Reveal opponent’s cards (review mode)' : 'Reveal opponents’ cards (review mode)',
+          false,
+          settings.mode === 'both',
+        )}
         {settings.mode === 'bot' && (
           <div className="d-flex align-items-center gap-2 mt-2 small">
             <label htmlFor="bot-speed" className="text-nowrap">
@@ -78,6 +104,7 @@ export function SettingsPanel({ settings, onChange, onResetSession }: Props) {
         <button className="btn btn-sm btn-outline-secondary mt-3" onClick={onResetSession}>
           Reset stacks
         </button>
+        <div className="small text-body-secondary mt-2">Changing the number of players resets stacks.</div>
       </div>
     </div>
   );

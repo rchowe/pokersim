@@ -2,7 +2,7 @@ import { type Card, rankOf, suitOf } from './cards.ts';
 import { CATEGORY, categoryOf, evaluate, straightHigh } from './evaluator.ts';
 import { type GameState, type Seat, boardAt } from './game.ts';
 import { ALL_COMBOS } from './handClasses.ts';
-import { CLASS_PERCENTILE, PREFLOP_CHARTS, situationFor } from './preflop.ts';
+import { CLASS_PERCENTILE, positionOf, preflopChart, situationFor } from './preflop.ts';
 
 export interface WeightedCombo {
   c1: Card;
@@ -99,7 +99,9 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 export function estimateRange(state: GameState, seat: Seat, dead: readonly Card[]): EstimatedRange {
   const combos = fullRange([...dead, ...state.board]);
   const notes: string[] = [];
+  const position = positionOf(state, seat);
   let preflopRaises = 0;
+  let preflopLimps = 0;
 
   const reweight = (fn: (c: WeightedCombo) => number) => {
     for (const c of combos) c.w *= fn(c);
@@ -110,15 +112,16 @@ export function estimateRange(state: GameState, seat: Seat, dead: readonly Card[
     const isRaise = entry.type === 'raise' || entry.type === 'bet';
     if (entry.player === seat && entry.type !== 'fold') {
       if (entry.street === 'preflop') {
-        const situation = situationFor(preflopRaises, state.button === seat);
-        const chart = PREFLOP_CHARTS[situation];
+        const situation = situationFor(preflopRaises, preflopLimps);
+        const chart = preflopChart({ situation, position, players: state.players.length });
         if (isRaise) {
           reweight((c) => (CLASS_PERCENTILE[c.cls] < chart.raise ? 1 : 0.03));
           notes.push(`${chart.title}: ${chart.raiseLabel.toLowerCase()} → mostly the top ${pct(chart.raise)} of hands.`);
         } else {
-          // Calling/checking ranges keep some strong hands that trap.
-          const top = situation === 'open' ? 0.2 : chart.raise;
-          const bottom = situation === 'open' ? 0.95 : chart.call;
+          // Calling/checking ranges keep some strong hands that trap. An open limp is off-chart,
+          // so assume a range a bit wider than the raising range, minus the best hands.
+          const top = situation === 'open' ? chart.raise / 4 : chart.raise;
+          const bottom = situation === 'open' ? Math.min(0.95, chart.raise * 1.2) : chart.call;
           reweight((c) => {
             const p = CLASS_PERCENTILE[c.cls];
             return p < top ? 0.3 : p < bottom ? 1 : 0.05;
@@ -142,6 +145,7 @@ export function estimateRange(state: GameState, seat: Seat, dead: readonly Card[
       }
     }
     if (entry.street === 'preflop' && isRaise) preflopRaises++;
+    else if (entry.street === 'preflop' && entry.type === 'call' && preflopRaises === 0) preflopLimps++;
   }
   return { combos, notes };
 }

@@ -18,10 +18,15 @@ body {
 /* Table */
 .poker-table {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'tl t tr'
+    'l c r'
+    'bl b br';
   align-items: center;
+  justify-items: center;
   gap: 1rem;
   min-height: 460px;
   padding: 1.25rem 1rem;
@@ -32,7 +37,24 @@ body {
   color: #fff;
 }
 
+.poker-table.multiway {
+  min-height: 560px;
+  padding: 1.75rem 2.5rem;
+  border-radius: 160px / 120px;
+  column-gap: 0.75rem;
+}
+
+.slot-t { grid-area: t; }
+.slot-tl { grid-area: tl; }
+.slot-tr { grid-area: tr; }
+.slot-l { grid-area: l; }
+.slot-r { grid-area: r; }
+.slot-b { grid-area: b; }
+.slot-bl { grid-area: bl; }
+.slot-br { grid-area: br; }
+
 .table-center {
+  grid-area: c;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -77,6 +99,34 @@ body {
   background: rgba(0, 0, 0, 0.25);
   border: 2px solid transparent;
   transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.seat.compact {
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  text-align: center;
+}
+
+.seat.compact .seat-info > div:first-child {
+  justify-content: center;
+}
+
+.seat.compact .seat-info .small {
+  white-space: nowrap;
+}
+
+/* Too wide beside the board; the seat's tooltip still shows it. */
+.seat.compact .bb-count {
+  display: none;
+}
+
+.position-badge {
+  padding: 0 0.35rem;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .seat.acting {
@@ -126,6 +176,19 @@ body {
 
 .seat-bottom .bet-chip {
   top: -1.6rem;
+}
+
+.seat-left .bet-chip {
+  top: 50%;
+  left: 100%;
+  transform: translate(0.4rem, -50%);
+}
+
+.seat-right .bet-chip {
+  top: 50%;
+  left: auto;
+  right: 100%;
+  transform: translate(-0.4rem, -50%);
 }
 
 /* Cards */
@@ -292,5 +355,40 @@ body {
     width: 2.7rem;
     height: 3.8rem;
     font-size: 1.1rem;
+  }
+
+  /* Too narrow for seats beside the board: give it its own row and move side seats down. */
+  .poker-table.multiway {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      'tl t tr'
+      'c c c'
+      'bl b br';
+    border-radius: 2rem;
+    padding: 1rem 0.5rem;
+    column-gap: 0.25rem;
+  }
+
+  .poker-table.multiway .slot-l { grid-area: bl; }
+  .poker-table.multiway .slot-r { grid-area: br; }
+
+  .poker-table.multiway .seat-left .bet-chip,
+  .poker-table.multiway .seat-right .bet-chip {
+    top: -1.6rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+
+
+  .seat.compact {
+    padding: 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .seat.compact .playing-card.md {
+    width: 2.1rem;
+    height: 3rem;
+    font-size: 0.9rem;
   }
 }

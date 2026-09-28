@@ -1,6 +1,8 @@
 export interface Settings {
-  /** 'bot': you play seat 0 against the bot. 'both': you make every decision. */
+  /** 'bot': you play seat 0 against bots. 'both': you make every decision. */
   mode: 'bot' | 'both';
+  /** Players at the table, 2 (heads-up) to 6. Changing it starts a new session. */
+  numPlayers: number;
   showOdds: boolean;
   oddsVsRange: boolean;
   oddsVsRandom: boolean;
@@ -8,13 +10,14 @@ export interface Settings {
   showRange: boolean;
   /** Color each suit differently (clubs green, diamonds blue) instead of red/black. */
   fourColorDeck: boolean;
-  /** Review mode: show the opponent's hole cards and compute against them. */
+  /** Review mode: show the opponents' hole cards and compute against them. */
   revealOpponent: boolean;
   botDelayMs: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   mode: 'bot',
+  numPlayers: 2,
   showOdds: true,
   oddsVsRange: true,
   oddsVsRandom: true,

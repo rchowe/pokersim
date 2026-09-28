@@ -6,13 +6,14 @@ import { CardRow } from './PlayingCard.tsx';
 interface Props {
   hero: Card[];
   board: Card[];
-  opponentCards: Card[] | null;
+  opponentCards: Card[][] | null;
 }
 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
 export function OutsPanel({ hero, board, opponentCards }: Props) {
   const outs = useMemo(() => calcOuts(hero, board, opponentCards ?? undefined), [hero, board, opponentCards]);
+  const plural = (opponentCards?.length ?? 0) > 1 ? 's' : '';
 
   return (
     <div className="card shadow-sm">
@@ -70,14 +71,15 @@ export function OutsPanel({ hero, board, opponentCards }: Props) {
               <div className={`alert ${outs.versusActual.behind ? 'alert-warning' : 'alert-success'} py-2 small mt-3 mb-0`}>
                 {outs.versusActual.behind || outs.versusActual.tied ? (
                   <>
-                    Against their actual hand you're {outs.versusActual.tied ? 'tied' : 'behind'}.{' '}
+                    Against their actual hand{plural} you're {outs.versusActual.tied ? 'tied' : 'behind'}.{' '}
                     <strong>{outs.versusActual.cards.length}</strong> card
                     {outs.versusActual.cards.length === 1 ? '' : 's'} put you ahead on the next street:
                   </>
                 ) : (
                   <>
-                    Against their actual hand you're ahead. <strong>{outs.versusActual.cards.length}</strong> card
-                    {outs.versusActual.cards.length === 1 ? '' : 's'} put them ahead on the next street:
+                    Against their actual hand{plural} you're ahead. <strong>{outs.versusActual.cards.length}</strong> card
+                    {outs.versusActual.cards.length === 1 ? '' : 's'} put {plural ? 'someone' : 'them'} ahead on the next
+                    street:
                   </>
                 )}
                 <div className="mt-1">

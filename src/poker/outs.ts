@@ -19,11 +19,15 @@ export interface OutsResult {
   byRiverPct: number | null;
   /** Rule of 4 (flop) or rule of 2 (turn) estimate. */
   ruleOfThumb: number;
-  /** When the opponent's cards are known: cards that change who is winning. */
+  /** When the opponents' cards are known: cards that change whether the hero is winning. */
   versusActual?: { behind: boolean; tied: boolean; cards: Card[] };
 }
 
-export function calcOuts(hero: readonly Card[], board: readonly Card[], opponent?: readonly Card[]): OutsResult | null {
+export function calcOuts(
+  hero: readonly Card[],
+  board: readonly Card[],
+  opponents?: readonly (readonly Card[])[],
+): OutsResult | null {
   if (board.length !== 3 && board.length !== 4) return null;
   const known = new Set([...hero, ...board]);
   const current = evaluate([...hero, ...board]);
@@ -61,16 +65,18 @@ export function calcOuts(hero: readonly Card[], board: readonly Card[], opponent
     ruleOfThumb: Math.min(n * (onFlop ? 4 : 2), 100) / 100,
   };
 
-  if (opponent) {
-    const oppNow = evaluate([...opponent, ...board]);
+  if (opponents && opponents.length > 0) {
+    const seen = new Set([...known, ...opponents.flat()]);
+    const bestOpponent = (extra: Card[]) => Math.max(...opponents.map((o) => evaluate([...o, ...board, ...extra])));
+    const oppNow = bestOpponent([]);
     const behind = current < oppNow;
     const tied = current === oppNow;
     const cards: Card[] = [];
     for (let card = 0; card < 52; card++) {
-      if (known.has(card) || opponent.includes(card)) continue;
+      if (seen.has(card)) continue;
       const h = evaluate([...hero, ...board, card]);
-      const v = evaluate([...opponent, ...board, card]);
-      // Behind or tied: cards that put us ahead. Ahead: cards that put them ahead.
+      const v = bestOpponent([card]);
+      // Behind or tied: cards that put us ahead of everyone. Ahead: cards that put someone ahead.
       if (behind || tied ? h > v : h < v) cards.push(card);
     }
     result.versusActual = { behind, tied, cards };

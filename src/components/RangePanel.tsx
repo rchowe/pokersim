@@ -1,19 +1,33 @@
 import { useMemo, useState } from 'react';
 import type { Card } from '../poker/cards.ts';
 import { HAND_CLASSES, classOfCombo } from '../poker/handClasses.ts';
-import { PREFLOP_CHARTS, type PreflopSituation, chartAction } from '../poker/preflop.ts';
+import {
+  POSITION_NAMES,
+  type PreflopSituation,
+  type PreflopSpot,
+  chartAction,
+  preflopChart,
+  situationsFor,
+} from '../poker/preflop.ts';
 import { BUCKET_NAMES, type EstimatedRange, postflopBucket, rangeGrid, rangeSize } from '../poker/range.ts';
 import { RangeGrid, type GridCell } from './RangeGrid.tsx';
+
+export interface OpponentView {
+  seat: number;
+  label: string;
+  range: EstimatedRange;
+  /** Hole cards, when they're face up. */
+  cards: Card[] | null;
+}
 
 interface Props {
   hero: Card[];
   board: Card[];
-  opponentRange: EstimatedRange;
-  opponentCards: Card[] | null;
-  /** Preflop situation the hero is facing right now, if any. */
-  situation: PreflopSituation | null;
+  opponents: OpponentView[];
+  /** Preflop spot the hero is facing right now, if any. */
+  spot: PreflopSpot | null;
   /** Default chart to show when no decision is pending. */
-  defaultSituation: PreflopSituation;
+  defaultSpot: PreflopSpot;
 }
 
 const ACTION_COLORS = { raise: '#d9534f', call: '#3fa65a', fold: 'var(--range-empty)' };
@@ -27,7 +41,7 @@ export function RangePanel(props: Props) {
         <ul className="nav nav-tabs card-header-tabs">
           <li className="nav-item">
             <button className={`nav-link ${tab === 'opponent' ? 'active' : ''}`} onClick={() => setTab('opponent')}>
-              Opponent's range
+              {props.opponents.length > 1 ? 'Opponents’ ranges' : 'Opponent’s range'}
             </button>
           </li>
           <li className="nav-item">
@@ -37,13 +51,41 @@ export function RangePanel(props: Props) {
           </li>
         </ul>
       </div>
-      <div className="card-body">{tab === 'opponent' ? <OpponentRange {...props} /> : <PreflopChart key={props.situation ?? 'none'} {...props} />}</div>
+      <div className="card-body">{tab === 'opponent' ? <OpponentRange {...props} /> : <PreflopChart key={chartKey(props)} {...props} />}</div>
     </div>
   );
 }
 
-function OpponentRange({ board, opponentRange, opponentCards }: Props) {
-  const { combos, notes } = opponentRange;
+const chartKey = ({ spot, defaultSpot }: Props) =>
+  spot ? `${spot.position}-${spot.situation}` : `${defaultSpot.position}-none`;
+
+function OpponentRange({ board, opponents }: Props) {
+  const [chosen, setChosen] = useState<number | null>(null);
+  const opponent = opponents.find((o) => o.seat === chosen) ?? opponents[0];
+  return (
+    <>
+      {opponents.length > 1 && (
+        <select
+          className="form-select form-select-sm mb-2"
+          value={opponent.seat}
+          onChange={(e) => setChosen(Number(e.target.value))}
+          aria-label="Opponent"
+        >
+          {opponents.map((o) => (
+            <option key={o.seat} value={o.seat}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      )}
+      <SingleRange board={board} opponent={opponent} />
+    </>
+  );
+}
+
+function SingleRange({ board, opponent }: { board: Card[]; opponent: OpponentView }) {
+  const { combos, notes } = opponent.range;
+  const opponentCards = opponent.cards;
   const grid = useMemo(() => rangeGrid(combos), [combos]);
   const size = rangeSize(combos);
 
@@ -114,16 +156,18 @@ function OpponentRange({ board, opponentRange, opponentCards }: Props) {
   );
 }
 
-function PreflopChart({ hero, situation, defaultSituation }: Props) {
+function PreflopChart({ hero, spot, defaultSpot }: Props) {
   const [choice, setChoice] = useState<PreflopSituation | null>(null);
-  const shown = choice ?? situation ?? defaultSituation;
-  const chart = PREFLOP_CHARTS[shown];
+  const base = spot ?? defaultSpot;
+  const situation = spot?.situation ?? null;
+  const shown = choice ?? base.situation;
+  const chart = preflopChart({ ...base, situation: shown });
   const heroClass = classOfCombo(hero[0], hero[1]);
-  const heroAction = chartAction(shown, heroClass);
+  const heroAction = chartAction(chart, heroClass);
   const actionLabel = { raise: chart.raiseLabel, call: chart.callLabel, fold: 'Fold' };
 
   const cells: GridCell[] = HAND_CLASSES.map((cls) => {
-    const a = chartAction(shown, cls.index);
+    const a = chartAction(chart, cls.index);
     return {
       background: ACTION_COLORS[a],
       color: a === 'fold' ? undefined : '#fff',
@@ -139,9 +183,9 @@ function PreflopChart({ hero, situation, defaultSituation }: Props) {
         onChange={(e) => setChoice(e.target.value as PreflopSituation)}
         aria-label="Preflop situation"
       >
-        {(Object.keys(PREFLOP_CHARTS) as PreflopSituation[]).map((s) => (
+        {situationsFor(base.position, base.players).map((s) => (
           <option key={s} value={s}>
-            {PREFLOP_CHARTS[s].title}
+            {preflopChart({ ...base, situation: s }).title}
             {s === situation ? ' (now)' : ''}
           </option>
         ))}
@@ -157,8 +201,17 @@ function PreflopChart({ hero, situation, defaultSituation }: Props) {
         {shown === situation ? '' : ' (You are not in this spot right now.)'}
       </p>
       <p className="small text-body-secondary mt-2 mb-0">
-        Simplified 100bb heads-up charts. The button opens wide because it has position after the flop and only the big
-        blind is left to act.
+        {base.players === 2 ? (
+          <>
+            Simplified 100bb heads-up charts. The button opens wide because it has position after the flop and only the
+            big blind is left to act.
+          </>
+        ) : (
+          <>
+            Simplified 100bb {base.players}-handed charts. Your position: {POSITION_NAMES[base.position]}. Later positions
+            open wider because fewer players are left to act behind them.
+          </>
+        )}
       </p>
     </>
   );
